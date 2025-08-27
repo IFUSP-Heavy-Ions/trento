@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <tuple>
 
 #include <boost/program_options/variables_map.hpp>
 
@@ -144,12 +145,14 @@ void Event::compute_reduced_thickness(GenMean gen_mean) {
   double sum = 0.;
   double ixcm = 0.;
   double iycm = 0.;
+  double sum_ent = 0.;
 
   for (int iy = 0; iy < nsteps_; ++iy) {
     for (int ix = 0; ix < nsteps_; ++ix) {
       auto t = norm_ * gen_mean(TA_[iy][ix], TB_[iy][ix]);
       TR_[iy][ix] = t;
       sum += t;
+      sum_ent += std::pow(t,0.75);
       // Center of mass grid indices.
       // No need to multiply by dxy since it would be canceled later.
       ixcm += t * static_cast<double>(ix);
@@ -158,6 +161,7 @@ void Event::compute_reduced_thickness(GenMean gen_mean) {
   }
 
   multiplicity_ = dxy_ * dxy_ * sum;
+  entropy_ = dxy_ * dxy_ * sum_ent;
   ixcm_ = ixcm / sum;
   iycm_ = iycm / sum;
 }
@@ -242,10 +246,20 @@ void Event::compute_observables() {
     }
   }
 
-  eccentricity_[2] = e2.finish();
-  eccentricity_[3] = e3.finish();
-  eccentricity_[4] = e4.finish();
-  eccentricity_[5] = e5.finish();
+  //eccentricity_[2] = e2.finish();
+  //eccentricity_[3] = e3.finish();
+  //eccentricity_[4] = e4.finish();
+  //eccentricity_[5] = e5.finish();
+
+  eccentricity_[2] = e2.re/std::fmax(e2.wt, TINY);
+  eccentricity_[3] = e2.im/std::fmax(e2.wt, TINY);
+  eccentricity_[4] = e3.re/std::fmax(e3.wt, TINY);
+  eccentricity_[5] = e3.im/std::fmax(e3.wt, TINY);
+  eccentricity_[6] = e4.re/std::fmax(e4.wt, TINY);
+  eccentricity_[7] = e4.im/std::fmax(e4.wt, TINY);
+  eccentricity_[8] = e5.re/std::fmax(e5.wt, TINY);
+  eccentricity_[9] = e5.im/std::fmax(e5.wt, TINY);
+
 }
 
 }  // namespace trento

@@ -66,6 +66,9 @@ class Event {
   /// \endrst
   const double& multiplicity() const
   { return multiplicity_; }
+  
+  const double& entropy() const
+  { return entropy_; }
 
   /// \rst
   /// Eccentricity harmonics `\varepsilon_n` for *n* = 2--5.
@@ -126,6 +129,8 @@ class Event {
 
   /// Multiplicity (total entropy).
   double multiplicity_;
+  
+  double entropy_;
 
   /// Eccentricity harmonics.
   std::map<int, double> eccentricity_;

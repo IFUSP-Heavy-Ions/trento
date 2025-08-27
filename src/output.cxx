@@ -3,7 +3,7 @@
 // MIT License
 
 #include "output.h"
-
+#include <array>
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
@@ -29,22 +29,31 @@ void write_stream(std::ostream& os, int width, int num, double impact_param,
   using std::setw;
   using std::scientific;
 
-  // Write a nicely-formatted line of event properties.
-  os << setprecision(10)
-     << setw(width)            << num
-     << setw(15) << fixed      << impact_param
-     << setw(5)                << event.npart();
+  if (event.npart() != 0){
 
-  // Output ncoll if calculated
-  if (ncoll > 0) os << setw(6) << ncoll;
+    // Write a nicely-formatted line of event properties.
+    os << setprecision(10)
+      << setw(width)            << num
+      << setw(15) << fixed      << impact_param
+      << setw(5)                << event.npart();
 
-  os << setw(18) << scientific << event.multiplicity()
-     << fixed;
+    // Output ncoll if calculated
+    if (ncoll > 0) os << setw(6) << ncoll;
 
-  for (const auto& ecc : event.eccentricity())
-    os << setw(14)             << ecc.second;
+    os << setw(18) << scientific << event.multiplicity()
+      << fixed;
+        
+    os << setw(18) << scientific << event.entropy()
+      << fixed;
 
-  os << '\n';
+    for (const auto& ecc : event.eccentricity())
+      os << setw(14)             << ecc.second;
+
+    os << '\n';
+
+  }
+
+
 }
 
 void write_text_file(const fs::path& output_dir, int width, int num,

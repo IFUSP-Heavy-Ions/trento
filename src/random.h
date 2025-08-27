@@ -19,9 +19,11 @@ namespace trento { namespace random {
 
 /// Mersenne Twister engine, 64-bit preset.
 using Engine = std::mt19937_64;
+using Engine2 = std::mt19937_64;
 
 /// Global variable defined in \c random.cxx.
 extern Engine engine;
+extern Engine2 engine2;
 
 /// Helper function to easily generate random numbers in [0, 1).
 template <typename RealType = double>

@@ -9,5 +9,6 @@ namespace trento { namespace random {
 
 // Seed random number generator from hardware device.
 Engine engine{std::random_device{}()};
+Engine2 engine2{std::random_device{}()};
 
 }}  // namespace trento::random

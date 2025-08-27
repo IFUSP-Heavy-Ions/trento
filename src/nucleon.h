@@ -236,14 +236,14 @@ inline double NucleonCommon::thickness(
 
 inline bool NucleonCommon::participate(NucleonData& A, NucleonData& B) const {
   // If both nucleons are already participants, there's nothing to do.
-  if (A.is_participant() && B.is_participant() && !calc_ncoll_)
-    return true;
+  /* if (A.is_participant() && B.is_participant() && !calc_ncoll_)
+    return true; */
 
   auto distance_sq = sqr(A.x() - B.x()) + sqr(A.y() - B.y());
 
   // Check if nucleons are out of range.
-  if (distance_sq > max_impact_sq_)
-    return false;
+  /* if (distance_sq > max_impact_sq_)
+    return false; */
 
   sample_constituent_positions(A);
   sample_constituent_positions(B);
@@ -296,10 +296,13 @@ inline void NucleonCommon::sample_constituent_positions(NucleonData& nucleon) co
 
     constituent.x = xloc;
     constituent.y = yloc;
-    constituent.fluctuation = participant_fluctuation_dist_(random::engine);
+    constituent.fluctuation = participant_fluctuation_dist_(random::engine2);
 
     xcom += xloc;
     ycom += yloc;
+
+    //std::cout<<"Gamma fluctuation = "<<constituent.fluctuation<<std::endl;
+
   }
 
   xcom /= constituent_number_;

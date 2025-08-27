@@ -523,6 +523,9 @@ void ManualNucleus::sample_nucleons_impl() {
 
     set_nucleon_position(*nucleon, x_rot, y_rot, z_rot);
   }
+
+  //std::cout<<"Euler angles = "<<angle_1<<","<<s2<<","<<angle_3<<std::endl;
+
 }
 
 #endif  // TRENTO_HDF5

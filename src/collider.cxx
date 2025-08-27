@@ -72,8 +72,10 @@ Collider::Collider(const VarMap& var_map)
   // Constructor body begins here.
   // Set random seed if requested.
   auto seed = var_map["random-seed"].as<int64_t>();
-  if (seed > 0)
+  if (seed > 0){
     random::engine.seed(static_cast<random::Engine::result_type>(seed));
+    random::engine2.seed(static_cast<random::Engine2::result_type>(seed));
+  }
 }
 
 // See header for explanation.
@@ -106,23 +108,22 @@ std::tuple<double, int> Collider::sample_collision() {
   int ncoll = 0;
   bool collision = false;
 
-  do {
-    // Sample b from P(b)db = 2*pi*b.
-    b = std::sqrt(bmin_ * bmin_ + (bmax_ * bmax_ - bmin_ * bmin_) * random::canonical<double>());
 
-    // Offset each nucleus depending on the asymmetry parameter (see header).
-    nucleusA_->sample_nucleons(asymmetry_ * b);
-    nucleusB_->sample_nucleons((asymmetry_ - 1.) * b);
+  // Sample b from P(b)db = 2*pi*b.
+  b = std::sqrt(bmin_ * bmin_ + (bmax_ * bmax_ - bmin_ * bmin_) * random::canonical<double>());
 
-    // Check each nucleon-nucleon pair.
-    for (auto&& A : *nucleusA_) {
-      for (auto&& B : *nucleusB_) {
-        auto new_collision = nucleon_common_.participate(A, B);
-        if (new_collision && calc_ncoll_) ++ncoll;
-        collision = new_collision || collision;
-      }
+  // Offset each nucleus depending on the asymmetry parameter (see header).
+  nucleusA_->sample_nucleons(asymmetry_ * b);
+  nucleusB_->sample_nucleons((asymmetry_ - 1.) * b);
+
+  // Check each nucleon-nucleon pair.
+  for (auto&& A : *nucleusA_) {
+    for (auto&& B : *nucleusB_) {
+      auto new_collision = nucleon_common_.participate(A, B);
+      if (new_collision && calc_ncoll_) ++ncoll;
+      collision = new_collision || collision;
     }
-  } while (!collision);
+  }
 
   return std::make_tuple(b, ncoll);
 }
