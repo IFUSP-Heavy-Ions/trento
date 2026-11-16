@@ -401,6 +401,27 @@ read_dataset(
   return array;
 }
 
+namespace {
+
+// Largest distance from the origin among a block of nucleon positions.
+template <typename Positions>
+double max_radius(const Positions& positions) {
+  auto rmax_sq = 0.;
+
+  for (const auto& position : positions) {
+    auto& x = position[0];
+    auto& y = position[1];
+    auto& z = position[2];
+    auto r_sq = x*x + y*y + z*z;
+    if (r_sq > rmax_sq)
+      rmax_sq = r_sq;
+  }
+
+  return std::sqrt(rmax_sq);
+}
+
+}  // unnamed namespace
+
 }  // unnamed namespace
 
 std::unique_ptr<ManualNucleus> ManualNucleus::create(const std::string& path) {
@@ -455,18 +476,7 @@ std::unique_ptr<ManualNucleus> ManualNucleus::create(const std::string& path) {
   std::array<hsize_t, 2> shape_n = {n*A, 3};
   auto positions = read_dataset<float>(*dataset, count, start, shape_n);
 
-  auto rmax_sq = 0.;
-
-  for (const auto& position : positions) {
-    auto& x = position[0];
-    auto& y = position[1];
-    auto& z = position[2];
-    auto r_sq = x*x + y*y + z*z;
-    if (r_sq > rmax_sq)
-      rmax_sq = r_sq;
-  }
-
-  auto rmax = std::sqrt(rmax_sq);
+  auto rmax = max_radius(positions);
 
   return std::unique_ptr<ManualNucleus>{
     new ManualNucleus{std::move(dataset), nconfigs, A, rmax}
@@ -478,8 +488,26 @@ ManualNucleus::ManualNucleus(std::unique_ptr<H5::DataSet> dataset,
     : Nucleus(A),
       dataset_(std::move(dataset)),
       rmax_(rmax),
-      index_dist_(0, nconfigs - 1)
+      index_dist_(0, nconfigs - 1),
+      nconfigs_(nconfigs)
 {}
+
+double ManualNucleus::config_radius(std::size_t index) const {
+  // What create() computes for a file that holds this configuration only.
+  std::array<hsize_t, 3> count = {1, size(), 3};
+  std::array<hsize_t, 3> start = {index, 0, 0};
+  std::array<hsize_t, 2> shape = {size(), 3};
+  return max_radius(read_dataset<float>(*dataset_, count, start, shape));
+}
+
+void ManualNucleus::set_config_index(std::size_t index) {
+  if (index >= nconfigs_)
+    throw std::out_of_range{
+      "event-id mode needs one configuration per event: asked for configuration "
+      + std::to_string(index) + " of " + std::to_string(nconfigs_)};
+  sequential_ = true;
+  forced_index_ = index;
+}
 
 ManualNucleus::~ManualNucleus() = default;
 
@@ -503,7 +531,18 @@ void ManualNucleus::sample_nucleons_impl() {
 
   // Choose and read a random config from the dataset.
   std::array<hsize_t, 3> count = {1, size(), 3};
-  std::array<hsize_t, 3> start = {index_dist_(random::engine), 0, 0};
+  std::size_t index;
+  if (sequential_) {
+    // A one-event run on a one-configuration file still draws its (only
+    // possible) index from the engine.  Draw the same way here, so that the
+    // engine is in the same state afterwards and the two runs stay identical.
+    std::uniform_int_distribution<std::size_t> only_one{0, 0};
+    only_one(random::engine);
+    index = forced_index_;
+  } else {
+    index = index_dist_(random::engine);
+  }
+  std::array<hsize_t, 3> start = {index, 0, 0};
   std::array<hsize_t, 2> shape = {size(), 3};
   const auto positions = read_dataset<float>(*dataset_, count, start, shape);
 

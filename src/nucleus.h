@@ -71,6 +71,14 @@ class Nucleus {
   /// x-direction.
   void sample_nucleons(double offset);
 
+  /// Event-id mode: use this configuration for the next sample instead of a
+  /// random one.  Only nuclei read from a file have configurations to choose.
+  virtual void set_config_index(std::size_t) {}
+
+  /// Event-id mode: the radius a file holding only this configuration would
+  /// report.  Nuclei that are not read from a file have one radius.
+  virtual double config_radius(std::size_t) const { return radius(); }
+
   using size_type = std::vector<NucleonData>::size_type;
   using iterator = std::vector<NucleonData>::iterator;
   using const_iterator = std::vector<NucleonData>::const_iterator;
@@ -294,6 +302,12 @@ class ManualNucleus : public Nucleus {
   /// saving the maximum.
   virtual double radius() const override;
 
+  /// Event-id mode: read configuration `index` on the next sample.
+  virtual void set_config_index(std::size_t index) override;
+
+  /// Event-id mode: the maximum radius of configuration `index` alone.
+  virtual double config_radius(std::size_t index) const override;
+
  private:
   /// Private constructor -- use create().
   /// \param dataset smart pointer to HDF5 dataset
@@ -314,6 +328,13 @@ class ManualNucleus : public Nucleus {
 
   /// Distribution for choosing random configs.
   std::uniform_int_distribution<std::size_t> index_dist_;
+
+  /// Number of configurations in the file.
+  const std::size_t nconfigs_;
+
+  /// Event-id mode: the configuration to read next, if `sequential_`.
+  bool sequential_ = false;
+  std::size_t forced_index_ = 0;
 };
 
 #endif  // TRENTO_HDF5

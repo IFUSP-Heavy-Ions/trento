@@ -138,7 +138,13 @@ int main(int argc, char* argv[]) {
      "maximum impact parameter [fm]")
     ("random-seed",
      po::value<int64_t>()->value_name("INT")->default_value(-1, "auto"),
-     "random seed");
+     "random seed")
+    ("first-event-id",
+     po::value<int64_t>()->value_name("INT")->default_value(-1, "off"),
+     "event-id mode: event n of this run is the event with global id "
+     "(first-event-id + n).  It is seeded with id + 1 and reads configuration "
+     "n of each manual nucleus file, so it is identical to a one-event run "
+     "with --random-seed=(id + 1) on that configuration");
 
   OptDesc grid_opts{"grid options"};
   grid_opts.add_options()

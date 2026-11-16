@@ -44,14 +44,16 @@ double determine_bmax(const VarMap& var_map,
 // Determine the asymmetry parameter (Collider::asymmetry_) for a pair of
 // nuclei.  It's just rA/(rA+rB), falling back to 1/2 if both radii are zero
 // (i.e. for proton-proton).
-double determine_asym(const Nucleus& A, const Nucleus& B) {
-  double rA = A.radius();
-  double rB = B.radius();
+double asymmetry_of(double rA, double rB) {
   double sum = rA + rB;
   if (sum < 0.1)
     return 0.5;
   else
     return rA/sum;
+}
+
+double determine_asym(const Nucleus& A, const Nucleus& B) {
+  return asymmetry_of(A.radius(), B.radius());
 }
 
 }  // unnamed namespace
@@ -63,6 +65,7 @@ Collider::Collider(const VarMap& var_map)
       nucleusB_(create_nucleus(var_map, 1)),
       nucleon_common_(var_map),
       nevents_(var_map["number-events"].as<int>()),
+      first_event_id_(var_map["first-event-id"].as<int64_t>()),
       calc_ncoll_(var_map["ncoll"].as<bool>()),
       bmin_(var_map["b-min"].as<double>()),
       bmax_(determine_bmax(var_map, *nucleusA_, *nucleusB_, nucleon_common_)),
@@ -84,6 +87,28 @@ Collider::~Collider() = default;
 void Collider::run_events() {
   // The main event loop.
   for (int n = 0; n < nevents_; ++n) {
+    int num = n;
+    if (first_event_id_ >= 0) {
+      // Event-id mode.  Make this event exactly the one a separate run with
+      // --random-seed=(id + 1) would produce: reseed both engines, drop any
+      // value a distribution cached from the previous event, and read the
+      // n-th configuration of each nucleus file instead of a random one.
+      const auto id = first_event_id_ + n;
+      const auto seed = id + 1;
+      random::engine.seed(static_cast<random::Engine::result_type>(seed));
+      random::engine2.seed(static_cast<random::Engine2::result_type>(seed));
+      nucleon_common_.reset_distributions();
+      nucleusA_->set_config_index(static_cast<std::size_t>(n));
+      nucleusB_->set_config_index(static_cast<std::size_t>(n));
+      // The offset of the two nuclei along x is rA/(rA + rB) of the impact
+      // parameter, with the radii estimated from the file.  A one-event run
+      // sees only its own configuration, so use that configuration's radius.
+      asymmetry_ = asymmetry_of(
+          nucleusA_->config_radius(static_cast<std::size_t>(n)),
+          nucleusB_->config_radius(static_cast<std::size_t>(n)));
+      num = static_cast<int>(id);
+    }
+
     // Sampling the impact parameter also implicitly prepares the nuclei for
     // event computation, i.e. by sampling nucleon positions and participants.
     auto collision_attr = sample_collision();
@@ -95,7 +120,7 @@ void Collider::run_events() {
     event_.compute(*nucleusA_, *nucleusB_, nucleon_common_);
 
     // Write event data.
-    output_(n, b, ncoll, event_);
+    output_(num, b, ncoll, event_);
   }
 }
 

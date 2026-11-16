@@ -5,6 +5,7 @@
 #ifndef COLLIDER_H
 #define COLLIDER_H
 
+#include <cstdint>
 #include <memory>
 
 #include "fwd_decl.h"
@@ -57,6 +58,9 @@ class Collider {
   /// Number of events to run.
   const int nevents_;
 
+  /// Global id of the first event, or negative when event-id mode is off.
+  const int64_t first_event_id_;
+
   /// Calculate binary collisions if true
   const bool calc_ncoll_;
 
@@ -79,7 +83,7 @@ class Collider {
   /// each would be offset by half the impact parameter.  A proton-lead system
   /// would have asymmetry = 1, meaning the lead nucleus would be offset by the
   /// entire impact parameter and the proton would not be offset at all.
-  const double asymmetry_;
+  double asymmetry_;
 
   /// The event instance.
   Event event_;

@@ -95,6 +95,14 @@ class NucleonCommon {
   /// Randomly determine if a pair of nucleons participates.
   bool participate(NucleonData& A, NucleonData& B) const;
 
+  /// Forget values cached from earlier draws (the normal and gamma
+  /// distributions generate in pairs and keep one), so that the next draw
+  /// depends only on the state of the engine.
+  void reset_distributions() const {
+    participant_fluctuation_dist_.reset();
+    constituent_position_dist_.reset();
+  }
+
  private:
   /// Sample constituent positions inside the nucleon.
   void sample_constituent_positions(NucleonData& nucleon) const;
